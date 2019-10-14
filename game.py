@@ -1,5 +1,6 @@
 from game_round import Game_round
 from rules import Rules
+from utils import Utils
 
 import random
 
@@ -9,22 +10,27 @@ class Game:
         starting_position):
         self.match = match
         self.starting_position = starting_position
-        self.game_type = None
+        self.game_type = {
+            'game': 'wenz'
+        }
         self.playing = True
         self.game_rounds = []
         self.winner = None
-        self.deck = list(range(24))
-        random.shuffle(self.deck)
+        self.deck = Utils.create_new_deck()
 
     def start(self):
         print("New game. Starting position is {0}".format(self.starting_position))
         for i in range(self.match.num_players):
             current_position = (self.starting_position + i) % self.match.num_players
             player = self.match.players[current_position]
-            player.cards = self.deck[i*6:i*6+6]
+            cards_per_player = len(self.deck) // self.match.num_players
+            player.cards = self.deck[i*cards_per_player:i*cards_per_player+cards_per_player]
             game_type = player.decide_on_game(self)
             print("Player {0} is playing {1}".format(current_position, game_type))
-            self.game_type = game_type
+            #self.game_type = game_type
+        for player in self.match.players:
+            for card in player.cards:
+                card.is_trump = Rules.is_card_trump(card, self.game_type)
 
     def run(self):
         while self.playing:

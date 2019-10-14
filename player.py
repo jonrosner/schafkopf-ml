@@ -1,5 +1,5 @@
 import random
-
+import numpy as np
 from rules import Rules
 
 class Player:
@@ -37,7 +37,9 @@ class Player:
                 except:
                     print("Please pick a valid card.")
         else:
-            card_index = random.randint(0, len(self.cards) - 1)
+            playable_cards_indices = [i for i in range(len(self.cards)) if self.cards[i].playable]
+            print("Playable cards:", playable_cards_indices)
+            card_index = random.choice(playable_cards_indices)
         picked_card = self.cards[card_index]
         self.cards.pop(card_index)
         return picked_card
