@@ -22,23 +22,32 @@ class Rules:
         card_ordering = Rules.get_card_ordering(game_round.game.game_type)
         color_ordering = Rules.get_color_ordering()
         for i in range(1, len(game_round.played_cards)):
+            # trump vs no trump, wenz Jd vs Ad
             if not highest_card.is_trump and game_round.played_cards[i].is_trump:
                 highest_card = game_round.played_cards[i]
                 winner = i
                 continue
-            # same color and higher
+            # same color and higher, eg Ac vs 10c
             if first_card.color == game_round.played_cards[i].color and \
                 card_ordering.index(game_round.played_cards[i].value) > card_ordering.index(highest_card.value):
                 highest_card = game_round.played_cards[i]
                 winner = i
                 continue
-            # if cards are the same value and trump, check color ordering
+            # if cards are both trump but one is higher, eg. solo Q vs J
             if highest_card.is_trump and game_round.played_cards[i].is_trump and \
+                card_ordering.index(game_round.played_cards[i].value) > card_ordering.index(highest_card.value):
+                highest_card = game_round.played_cards[i]
+                winner = i
+                continue
+            # if cards are the same value and trump, check color ordering, eg wenz Jc vs Jd
+            if highest_card.is_trump and game_round.played_cards[i].is_trump and \
+                game_round.played_cards[i].value == highest_card.value and \
                 color_ordering.index(game_round.played_cards[i].color) > color_ordering.index(highest_card.color):
                 highest_card = game_round.played_cards[i]
                 winner = i
                 continue
-        return winner
+        # move from nth card played to correct played based on relative position
+        return (winner + game_round.starting_position) % game_round.game.match.num_players
 
     @staticmethod
     def calc_game_winner(game):

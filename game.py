@@ -11,7 +11,8 @@ class Game:
         self.match = match
         self.starting_position = starting_position
         self.game_type = {
-            'game': 'wenz'
+            'game': 'solo',
+            'color': 'h'
         }
         self.playing = True
         self.game_rounds = []

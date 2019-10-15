@@ -26,19 +26,19 @@ class Player:
 
     def decide_on_card(self, round):
         card_index = -1
+        playable_cards_indices = [i for i in range(len(self.cards)) if self.cards[i].playable]
+        print("Playable cards:", playable_cards_indices)
         if self.is_human:
             while card_index == -1:
                 console_input = input("What card index do you want to pick?")
                 try:
                     console_int_input = int(console_input)
-                    if console_int_input >= len(self.cards):
+                    if console_int_input not in playable_cards_indices:
                         raise Exception()
                     card_index = console_int_input
                 except:
                     print("Please pick a valid card.")
         else:
-            playable_cards_indices = [i for i in range(len(self.cards)) if self.cards[i].playable]
-            print("Playable cards:", playable_cards_indices)
             card_index = random.choice(playable_cards_indices)
         picked_card = self.cards[card_index]
         self.cards.pop(card_index)
