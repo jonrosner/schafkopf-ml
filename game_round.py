@@ -9,6 +9,7 @@ class Game_round:
         self.starting_position = starting_position
         self.played_cards = []
         self.winner = None
+        self.round_points = 0
 
     def start(self):
         print("New round! Player {0} starts.".format(self.starting_position))
@@ -25,6 +26,8 @@ class Game_round:
 
     def end(self):
         self.winner = Rules.calc_round_winner(self)
+        self.round_points = Rules.calc_round_points(self)
+        self.game.match.players[self.winner].game_points += self.round_points
         print("Player {0} won this round. Played cards: {1}".format(self.winner, " ".join(list(map(str, self.played_cards)))))
         self.game.starting_position = self.winner
         Rules.set_playable_cards(self, True)

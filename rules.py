@@ -8,11 +8,13 @@ with open('cards.json') as f:
 
 class Rules:
     @staticmethod
-    def get_all_games():
-        return {
-            'solo': 1,
-            'wenz': 0
-        }
+    def calc_highest_game(games_called):
+        ordering = Rules.get_possible_games()
+        highest_game = games_called[0]
+        for game in games_called:
+            if ordering.index(game["game"]) > ordering.index(highest_game["game"]):
+                highest_game = game
+        return game
 
     @staticmethod
     def calc_round_winner(game_round):
@@ -50,21 +52,58 @@ class Rules:
         return (winner + game_round.starting_position) % game_round.game.match.num_players
 
     @staticmethod
-    def calc_game_winner(game):
-        win_counts = {}
-        for player in game.match.players:
-            win_counts[player.position] = 0
-        for game_round in game.game_rounds:
-            win_counts[game_round.winner] += 1
-        print(win_counts)
-        winner = list(win_counts.keys())[np.argmax(list(win_counts.values()))]
-        return winner
+    def calc_round_points(game_round):
+        points = 0
+        points_map = Rules.get_points_map()
+        for card in game_round.played_cards:
+            points += points_map[card.value]
+        return points
 
     @staticmethod
-    def get_possible_games(game):
-        return {
-            'solo', 'wenz'
+    def calc_game_winner(game):
+        if game.game_type['game'] != 'no_game':
+            player_index = game.game_type['player_id']
+            playing_points = game.match.players[player_index].game_points
+            if playing_points > 60:
+                return [player_index]
+            else:
+                return [i for i in range(game.match.num_players) if i != player_index]
+        else:
+            loser = game.match.players[0]
+            for player in game.match.players:
+                if player.game_points > loser.game_points:
+                    loser = player
+            return [i for i in range(game.match.num_players) if i != loser.position]
+
+    @staticmethod
+    def calc_game_payout(game):
+        payout_map = {
+            "solo": 20,
+            "wenz": 10,
+            "no_game": 10,
+            "black_factor": 2,
+            "schneider": 10,
+            "per_running": 10,
+            "per_virgin_factor": 2
         }
+        payout = 0
+        payout += payout_map[game.game_type['game']]
+        if game.match.players[game.winner].game_points == 120:
+            return
+    @staticmethod
+    def get_points_map():
+        return {
+            '9': 0,
+            'J': 2,
+            'Q': 3,
+            'K': 4,
+            '10': 10,
+            'A': 11
+        }
+
+    @staticmethod
+    def get_possible_games():
+        return ['no_game', 'wenz', 'solo']
 
     @staticmethod
     def get_color_ordering():
@@ -74,7 +113,7 @@ class Rules:
     def get_card_ordering(game_type):
         if game_type['game'] == 'wenz':
             return ['9', 'Q', 'K', '10', 'A', 'J']
-        if game_type['game'] == 'solo':
+        if game_type['game'] == 'solo' or game_type['game'] == 'no_game':
             return ['9', 'K', '10', 'A', 'J', 'Q']
 
     @staticmethod
@@ -85,6 +124,9 @@ class Rules:
         if game_type['game'] == 'solo':
             # all Q, J and color are trump
             return card.value == 'Q' or card.value == 'J' or card.color == game_type['color']
+        if game_type['game'] == 'no_game':
+            # all Q, J and heart are trump
+            return card.value == 'Q' or card.value == 'J' or card.color == 'h'
 
     @staticmethod
     def _is_card_playable(card, game_type, played_cards, player_cards):

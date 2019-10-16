@@ -7,21 +7,34 @@ class Player:
         self.position = position
         self.is_human = is_human
         self.cards = []
+        self.game_points = 0
+        self.coins = 10000
 
     def decide_on_game(self, game):
         game = ''
-        possible_games = Rules.get_possible_games(game)
+        possible_games = Rules.get_possible_games()
         if self.is_human:
             while game == '':
                 console_input = input("What game do you want to play?")
+                color = None
+                if console_input == 'solo':
+                    color = input("What color do you want to play?")
                 try:
                     if console_input not in possible_games:
                         raise Exception()
-                    game = console_input
+                    game = {
+                        "game": console_input,
+                        "color": color,
+                        "player_id": self.position
+                    }
                 except:
                     print("Please pick a valid game.")
         else:
-            game = random.randint(0, len(possible_games) - 1)
+            game = {
+                "game": random.choice(Rules.get_possible_games()),
+                "color": random.choice(Rules.get_color_ordering()),
+                "player_id": self.position
+            }
         return game
 
     def decide_on_card(self, round):
