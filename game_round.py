@@ -28,7 +28,7 @@ class Game_round:
         self.winner = Rules.calc_round_winner(self)
         self.round_points = Rules.calc_round_points(self)
         self.game.match.players[self.winner].game_points += self.round_points
-        print("Player {0} won this round. Played cards: {1}".format(self.winner, " ".join(list(map(str, self.played_cards)))))
+        print("Player {0} won this round. Points: {1}. Played cards: {2}".format(self.winner, list(map(lambda player: player.game_points, self.game.match.players)), " ".join(list(map(str, self.played_cards)))))
         self.game.starting_position = self.winner
         Rules.set_playable_cards(self, True)
         if len(self.game.match.players[0].cards) == 0:

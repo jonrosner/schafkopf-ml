@@ -14,7 +14,7 @@ class Rules:
         for game in games_called:
             if ordering.index(game["game"]) > ordering.index(highest_game["game"]):
                 highest_game = game
-        return game
+        return highest_game
 
     @staticmethod
     def calc_round_winner(game_round):
@@ -65,17 +65,17 @@ class Rules:
             player_index = game.game_type['player_id']
             playing_points = game.match.players[player_index].game_points
             if playing_points > 60:
-                return [player_index]
+                return [game.match.players[player_index]]
             else:
-                return [i for i in range(game.match.num_players) if i != player_index]
+                return [game.match.players[i] for i in range(game.match.num_players) if i != player_index]
         else:
             loser = game.match.players[0]
             for player in game.match.players:
                 if player.game_points > loser.game_points:
                     loser = player
-            return [i for i in range(game.match.num_players) if i != loser.position]
+            return [game.match.players[i] for i in range(game.match.num_players) if i != loser.position]
 
-    @staticmethod
+    @staticmethod # the amount all losing players have to pay to winning players
     def calc_game_payout(game):
         payout_map = {
             "solo": 20,
@@ -88,8 +88,34 @@ class Rules:
         }
         payout = 0
         payout += payout_map[game.game_type['game']]
-        if game.match.players[game.winner].game_points == 120:
-            return
+        running_cards = Rules.get_running_cards(game.game_type['game'])
+        winning_cards = [item for sublist in list(map(lambda player: player.cards, game.winners)) for item in sublist]
+        winning_cards_ids = list(map(lambda card: card.id, winning_cards))
+        runnings = 0
+        for card_id in running_cards:
+            if card_id in winning_cards_ids:
+                runnings += 1
+        payout += runnings * payout_map["per_running"]
+        winning_game_points = sum(list(map(lambda player: player.game_points, game.winners)))
+        if winning_game_points == 120:
+            payout *= payout_map["black_factor"]
+        elif winning_game_points  > 90 \
+            or winning_game_points < 30:
+            payout += payout_map["schneider"]
+        if game.game_type["game"] == "no_game":
+            virgins = 0
+            for player in game.match.players:
+                if player.game_points == 0:
+                    virgins += 1
+            payout *= virgins
+        return payout
+
+    @staticmethod
+    def get_running_cards(game_type):
+        if game_type == 'wenz':
+            return ['Jc', 'Js', 'Jh', 'Jd']
+        if game_type == 'solo' or game_type == 'no_game':
+            return ['Qc', 'Qs', 'Qh', 'Qd', 'Jc', 'Js', 'Jh', 'Jd']
     @staticmethod
     def get_points_map():
         return {

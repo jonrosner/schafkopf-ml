@@ -1,7 +1,7 @@
 from match import Match
 
 def init():
-    num_players = 4
+    num_players = 3
     match = Match(num_players)
     match.start()
     match.run()

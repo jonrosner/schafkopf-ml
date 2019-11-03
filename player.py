@@ -56,3 +56,7 @@ class Player:
         picked_card = self.cards[card_index]
         self.cards.pop(card_index)
         return picked_card
+
+    def __str__(self):
+        cards_str = " ".join(list(map(str, self.cards)))
+        return "[Player: {0}. Cards: {1}. Coins: {2}]".format(self.position, cards_str, self.coins)

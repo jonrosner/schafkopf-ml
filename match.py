@@ -14,7 +14,7 @@ class Match:
         for i in range(self.num_players):
             self.players.append(Player(
                 position=i,
-                is_human=(i == 0)
+                is_human=False
             ))
 
     def run(self):
