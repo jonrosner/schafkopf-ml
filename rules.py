@@ -8,6 +8,10 @@ with open('cards.json') as f:
 
 class Rules:
     @staticmethod
+    def get_cards():
+        return cards
+
+    @staticmethod
     def calc_highest_game(games_called):
         ordering = Rules.get_possible_games()
         highest_game = games_called[0]

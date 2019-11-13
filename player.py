@@ -1,14 +1,19 @@
 import random
 import numpy as np
 from rules import Rules
+from utils import Utils
 
 class Player:
-    def __init__(self, position, is_human):
+    def __init__(self, position, is_human, rl_agent):
         self.position = position
         self.is_human = is_human
         self.cards = []
         self.game_points = 0
         self.coins = 10000
+        self.rl_agent = rl_agent
+        # store state_features, actions and reward in memory
+        self.game_memory = []
+        self.action_memory = []
 
     def decide_on_game(self, game):
         game = ''
@@ -30,14 +35,25 @@ class Player:
                 except:
                     print("Please pick a valid game.")
         else:
+            if self.rl_agent:
+                features = Utils.features_from_game(game, self)
+                game_index = self.rl_agent.predict_game(features)
+                game_type, color = Utils.get_game_from_index(game_index)
+                self.game_memory.append({
+                    "features": features,
+                    "action": game_index
+                })
+            else:
+                game_type = random.choice(Rules.get_possible_games())
+                color = random.choice(Rules.get_color_ordering())
             game = {
-                "game": random.choice(Rules.get_possible_games()),
-                "color": random.choice(Rules.get_color_ordering()),
+                "game": game_type,
+                "color": color,
                 "player_id": self.position
             }
         return game
 
-    def decide_on_card(self, round):
+    def decide_on_card(self, game_round):
         card_index = -1
         playable_cards_indices = [i for i in range(len(self.cards)) if self.cards[i].playable]
         print("Playable cards:", playable_cards_indices)
@@ -52,7 +68,17 @@ class Player:
                 except:
                     print("Please pick a valid card.")
         else:
-            card_index = random.choice(playable_cards_indices)
+            if self.rl_agent:
+                features = Utils.features_from_round(game_round, self)
+                card_index = self.rl_agent.predict_action(features)
+                self.action_memory.append({
+                    "features": features,
+                    "action": card_index
+                })
+                #TODO: remove this!!!
+                card_index = random.choice(playable_cards_indices)
+            else:
+                card_index = random.choice(playable_cards_indices)
         picked_card = self.cards[card_index]
         self.cards.pop(card_index)
         return picked_card

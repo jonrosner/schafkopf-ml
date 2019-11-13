@@ -52,10 +52,34 @@ class Game:
         print("Player(s) {0} won this game.".format(list(map(lambda player: player.position, self.winners))))
         for player in self.match.players:
             if player in self.winners:
+                for mem in player.game_memory:
+                    self.match.rl_agent.add_to_game_memory({
+                        "features": mem.features,
+                        "action": mem.action,
+                        "reward": self.payout
+                    })
+                for mem in player.action_memory:
+                    self.match.rl_agent.add_to_game_memory({
+                        "features": mem.features,
+                        "action": mem.action,
+                        "reward": self.payout
+                    })
                 continue
             for winning_player in self.winners:
                 #TODO: this will not work with callgame!!
                 player.coins -= self.payout
+                for mem in player.game_memory:
+                    self.match.rl_agent.add_to_game_memory({
+                        "features": mem.features,
+                        "action": mem.action,
+                        "reward": -self.payout
+                    })
+                for mem in player.game_memory:
+                    self.match.rl_agent.add_to_game_memory({
+                        "features": mem.features,
+                        "action": mem.action,
+                        "reward": -self.payout
+                    })
                 winning_player.coins += self.payout
         self.match.current_starting_position = \
             (self.match.current_starting_position + 1) % self.match.num_players

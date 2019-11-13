@@ -2,9 +2,9 @@ from game import Game
 from player import Player
 
 class Match:
-    def __init__(self,
-        num_players):
+    def __init__(self, num_players, rl_agent):
         self.num_players = num_players
+        self.rl_agent = rl_agent
         self.current_starting_position = 0
         self.playing = True
         self.players = []
@@ -14,7 +14,8 @@ class Match:
         for i in range(self.num_players):
             self.players.append(Player(
                 position=i,
-                is_human=False
+                is_human=i==0,
+                rl_agent=self.rl_agent
             ))
 
     def run(self):
