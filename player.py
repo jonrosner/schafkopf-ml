@@ -11,9 +11,6 @@ class Player:
         self.game_points = 0
         self.coins = 10000
         self.rl_agent = rl_agent
-        # store state_features, actions and reward in memory
-        self.game_memory = []
-        self.action_memory = []
 
     def decide_on_game(self, game):
         game = ''
@@ -39,10 +36,6 @@ class Player:
                 features = Utils.features_from_game(game, self)
                 game_index = self.rl_agent.predict_game(features)
                 game_type, color = Utils.get_game_from_index(game_index)
-                self.game_memory.append({
-                    "features": features,
-                    "action": game_index
-                })
             else:
                 game_type = random.choice(Rules.get_possible_games())
                 color = random.choice(Rules.get_color_ordering())
@@ -71,10 +64,6 @@ class Player:
             if self.rl_agent:
                 features = Utils.features_from_round(game_round, self)
                 card_index = self.rl_agent.predict_action(features)
-                self.action_memory.append({
-                    "features": features,
-                    "action": card_index
-                })
                 #TODO: remove this!!!
                 card_index = random.choice(playable_cards_indices)
             else:

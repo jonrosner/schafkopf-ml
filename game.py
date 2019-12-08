@@ -19,6 +19,7 @@ class Game:
 
     def start(self):
         print("New game. Starting position is {0}".format(self.starting_position))
+        self.match.rl_agent.init_game_memory()
         for i in range(self.match.num_players):
             self.match.players[i].game_points = 0
             current_position = (self.starting_position + i) % self.match.num_players
@@ -81,5 +82,6 @@ class Game:
                         "reward": -self.payout
                     })
                 winning_player.coins += self.payout
+        self.match.rl_agent.flush_game_memory()
         self.match.current_starting_position = \
             (self.match.current_starting_position + 1) % self.match.num_players
