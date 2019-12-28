@@ -32,7 +32,7 @@ class Utils:
         cards = Rules.get_cards()
         for i in range(8):
             features[i] = [j for j,card in enumerate(cards) if card["id"] == player.cards[i].id][0]
-        features[8] = player.position
+        features[8] = (player.position - game.starting_position) % game.match.num_players
         return features
 
 

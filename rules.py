@@ -75,6 +75,9 @@ class Rules:
         else:
             loser = game.match.players[0]
             for player in game.match.players:
+                # schwarz spielen gewinnt ramsch
+                #if player.game_points == 120:
+                #    return [player]
                 if player.game_points > loser.game_points:
                     loser = player
             return [game.match.players[i] for i in range(game.match.num_players) if i != loser.position]
@@ -111,7 +114,10 @@ class Rules:
             for player in game.match.players:
                 if player.game_points == 0:
                     virgins += 1
-            payout *= virgins
+            if virgins == game.match.num_players - 1:
+                payout = 100
+            else:
+                payout *= (virgins + 1)
         return payout
 
     @staticmethod

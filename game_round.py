@@ -12,8 +12,9 @@ class Game_round:
         self.round_points = 0
 
     def start(self):
-        print("New round! Player {0} starts.".format(self.starting_position))
-        Utils.print_players_information(self.game.match.players)
+        #print("New round! Player {0} starts.".format(self.starting_position))
+        #Utils.print_players_information(self.game.match.players)
+        pass
 
     def run(self):
         for i in range(self.game.match.num_players):
@@ -31,5 +32,13 @@ class Game_round:
         print("Player {0} won this round. Points: {1}. Played cards: {2}".format(self.winner, list(map(lambda player: player.game_points, self.game.match.players)), " ".join(list(map(str, self.played_cards)))))
         self.game.starting_position = self.winner
         Rules.set_playable_cards(self, True)
+        # update card memory with rewards
+        for player in self.game.match.players:
+            # TODO: is player pos right here?
+            reward = self.round_points if self.game.game_type['game'] != 'no_game' else -self.round_points
+            reward = 0 if player.position != self.winner else reward
+            self.game.match.rl_agent.update_card_memory_with_reward(player.position, reward)
+        game_number = Rules.get_possible_games().index(self.game.game_type['game'])
+        self.game.match.rl_agent.train_action_network(game_number)
         if len(self.game.match.players[0].cards) == 0:
             self.game.playing = False
