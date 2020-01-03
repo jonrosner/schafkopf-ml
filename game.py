@@ -23,6 +23,10 @@ class Game:
         print("New game {0}. Starting position is {1}".format(self.game_no, self.starting_position))
         playable_games_idxs = [0,1,2]
         for i in range(self.match.num_players):
+            if self.game_no % 100 == 0:
+                self.match.rl_agent.explore = False
+            else:
+                self.match.rl_agent.explore = True
             self.match.players[i].game_points = 0
             current_position = (self.starting_position + i) % self.match.num_players
             player = self.match.players[current_position]

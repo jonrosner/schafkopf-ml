@@ -32,14 +32,15 @@ class DQN:
         self.model.save(filename)
 
     def remember(self, state, action, reward, state_2, done):
-        print((state, action, reward, state_2, done))
+        #print((state, action, reward, state_2, done))
         self.memory.append((state, action, reward, state_2, done))
 
-    def predict(self, state, allowed_idxs):
-        if np.random.rand() <= self.epsilon:
+    def predict(self, state, allowed_idxs, explore):
+        if explore and np.random.rand() <= self.epsilon:
             return allowed_idxs[np.random.choice(len(allowed_idxs))]
         act_values = self.model.predict(np.array([state]))
-        #print(act_values)
+        if not explore:
+            print(act_values)
         return allowed_idxs[np.argmax(act_values[0][allowed_idxs])]
 
     def replay(self, batch_size):

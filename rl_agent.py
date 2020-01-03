@@ -8,13 +8,16 @@ class Rl_Agent:
         self.dqn = None
         self.game_memory = {}
         self.card_memory = {}
+        self.explore = True
 
     def predict_game(self, state, allowed_games_idxs):
-        prediction = self.game_network.predict(state, allowed_games_idxs)
+        if not self.explore:
+            print("NOT EXPLORING")
+        prediction = self.game_network.predict(state, allowed_games_idxs, self.explore)
         return prediction
 
     def predict_action(self, state, allowed_idxs, game_no):
-        prediction = self.action_networks[game_no].predict(state, allowed_idxs)
+        prediction = self.action_networks[game_no].predict(state, allowed_idxs, self.explore)
         return prediction
 
     def update_game_memory(self, player_pos, state, game):
