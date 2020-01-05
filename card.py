@@ -7,4 +7,4 @@ class Card:
         self.is_trump = False
 
     def __str__(self):
-        return "[{0}, {1}]".format(self.id, self.playable)
+        return "[{0}, {1}]".format(self.id, self.is_trump)

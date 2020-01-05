@@ -38,7 +38,7 @@ class Player:
                 features = Utils.features_from_game(game_obj, self)
                 game_index = self.rl_agent.predict_game(features, playable_games_idxs)
                 game_type = Rules.get_possible_games()[game_index]
-                color = 'heart'
+                color = 'h'
                 self.rl_agent.update_game_memory(self.position, features, game_index)
             else:
                 game_type = random.choice(Rules.get_possible_games())
@@ -70,9 +70,10 @@ class Player:
                 game_number = Rules.get_possible_games().index(game_round.game.game_type['game'])
                 if self.old_state:
                     self.rl_agent.update_card_memory_with_next_state(self.position, features, False)
-                    self.rl_agent.flush_card_memory(game_number, self.position)
                 self.old_state = features
-                card_index = self.rl_agent.predict_action(features, playable_cards_indices, game_number)
+                # every 10 rounds do not explore on cards but do on game
+                explore = game_round.game.game_no % 10 != 0
+                card_index = self.rl_agent.predict_action(features, playable_cards_indices, game_number, explore)
                 self.rl_agent.update_card_memory(self.position, features, card_index)
             else:
                 # pick highest card and play it

@@ -41,6 +41,8 @@ class Utils:
         # 1-8 cards (-1 for None)
         # 9-10 played cards (-1 for None)
         # 11 position
+        # 12 - 35 played cards as one hot
+        # here no game type is mentioned because currently every gametype has its own network
         features = [0] * 11
         cards = Rules.get_cards()
         for i in range(8):
@@ -55,6 +57,11 @@ class Utils:
                 features[i] = -1
         # relative position in round
         features[10] = (player.position - game_round.starting_position) % game_round.game.match.num_players
+        played_cards = [0] * 24
+        ids = list(map(lambda x: x["id"], cards))
+        for c in game_round.game.played_cards:
+            played_cards[ids.index(c.id)] = 1
+        features += played_cards
         return features
 
     @staticmethod

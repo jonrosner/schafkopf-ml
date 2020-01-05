@@ -18,12 +18,13 @@ class Game:
         self.winners = []
         self.deck = Utils.create_new_deck()
         self.game_no = game_no
+        self.played_cards = []
 
     def start(self):
         print("New game {0}. Starting position is {1}".format(self.game_no, self.starting_position))
         playable_games_idxs = [0,1,2]
         for i in range(self.match.num_players):
-            if self.game_no % 100 == 0:
+            if self.game_no % 30 == 0:
                 self.match.rl_agent.explore = False
             else:
                 self.match.rl_agent.explore = True
@@ -32,7 +33,6 @@ class Game:
             player = self.match.players[current_position]
             cards_per_player = len(self.deck) // self.match.num_players
             player.cards = self.deck[i*cards_per_player:i*cards_per_player+cards_per_player]
-            print("Player: {0}".format(str(player)))
             game_type = player.decide_on_game(self, playable_games_idxs)
             if game_type['game'] == 'wenz':
                 playable_games_idxs = [0,2]
@@ -43,8 +43,10 @@ class Game:
         self.game_type = Rules.calc_highest_game(self.games_called)
         print("We play:", self.game_type)
         for player in self.match.players:
+            Rules.order_cards(player.cards, self)
             for card in player.cards:
                 card.is_trump = Rules.is_card_trump(card, self.game_type)
+            print("Player: {0}".format(str(player)))
 
     def run(self):
         while self.playing:
@@ -59,6 +61,8 @@ class Game:
 
     def end(self):
         self.winners = Rules.calc_game_winner(self)
+        if len(self.winners) == 1 and self.match.rl_agent.explore == False:
+            print("WINNER WINNER")
         self.payout = Rules.calc_game_payout(self)
         #print("Points: ", list(map(lambda player: player.game_points, self.match.players)))
         print("Player(s) {0} won this game.".format(list(map(lambda player: player.position, self.winners))))
@@ -73,13 +77,14 @@ class Game:
         new_coins = list(map(lambda player: player.coins, self.match.players))
         rewards = [x[0] - x[1] for x in zip(new_coins, old_coins)]
         for i, reward in enumerate(rewards):
-            # TODO: position is probably wrong here
+            # Update game memory and card memory with reward - 8.0 is number of cards
+            per_card_reward = reward / 8.0
             self.match.rl_agent.update_game_memory_with_reward(self.match.players[i].position, reward)
-        for player in self.match.players:
-            self.match.rl_agent.update_card_memory_with_next_state(player.position, None, True)
-            game_number = Rules.get_possible_games().index(self.game_type['game'])
-            self.match.rl_agent.flush_card_memory(game_number, player.position)
-            player.old_state = None
+            self.match.rl_agent.update_card_memory_with_next_state(self.match.players[i].position, None, True)
+            self.match.rl_agent.update_card_memory_with_reward(self.match.players[i].position, per_card_reward)
+            self.match.players[i].old_state = None
+        game_number = Rules.get_possible_games().index(self.game_type['game'])
+        self.match.rl_agent.flush_card_memory(game_number)
         self.match.rl_agent.flush_game_memory()
         self.match.current_starting_position = \
             (self.match.current_starting_position + 1) % self.match.num_players

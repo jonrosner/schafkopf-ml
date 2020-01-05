@@ -12,7 +12,7 @@ class DQN:
         self.action_size = action_size
         self.memory = deque(maxlen=10000)
         self.gamma = 1.    # discount rate
-        self.epsilon = 0.3  # exploration rate
+        self.epsilon = 0.1  # exploration rate
         self.epsilon_min = 0.01
         self.learning_rate = 0.001
         self.model = self._build_model()
@@ -21,8 +21,8 @@ class DQN:
     def _build_model(self):
         # Neural Net for Deep-Q learning Model
         model = tf.keras.Sequential()
-        model.add(tf.keras.layers.Dense(24, input_dim=self.state_size, activation='relu'))
-        model.add(tf.keras.layers.Dense(24, activation='relu'))
+        model.add(tf.keras.layers.Dense(64, input_dim=self.state_size, activation='relu'))
+        model.add(tf.keras.layers.Dense(32, activation='relu'))
         model.add(tf.keras.layers.Dense(self.action_size, activation='linear'))
         model.compile(loss='mse',
                       optimizer=tf.keras.optimizers.Adam(lr=self.learning_rate))
@@ -37,6 +37,7 @@ class DQN:
 
     def predict(self, state, allowed_idxs, explore):
         if explore and np.random.rand() <= self.epsilon:
+            print("RANDOM")
             return allowed_idxs[np.random.choice(len(allowed_idxs))]
         act_values = self.model.predict(np.array([state]))
         if not explore:

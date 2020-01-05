@@ -153,6 +153,21 @@ class Rules:
             return ['9', 'K', '10', 'A', 'J', 'Q']
 
     @staticmethod
+    def order_cards(cards, game):
+        card_ordering = Rules.get_card_ordering(game.game_type)
+        color_ordering = Rules.get_color_ordering()
+        for _ in range(len(cards)):
+            for i in range(0, len(cards)-1):
+                card1_idx = card_ordering.index(cards[i].value)
+                card2_idx = card_ordering.index(cards[i+1].value)
+                color1 = color_ordering.index(cards[i].color)
+                color2 = color_ordering.index(cards[i+1].color)
+                if card1_idx > card2_idx or (card1_idx == card2_idx and color1 > color2):
+                    tmp = cards[i+1]
+                    cards[i+1] = cards[i]
+                    cards[i] = tmp
+
+    @staticmethod
     def is_card_trump(card, game_type):
         if game_type['game'] == 'wenz':
             # only J are trump
