@@ -14,11 +14,12 @@ class Player:
         # is used to remember transition
         self.old_state = None
 
-    def decide_on_game(self, game_obj, playable_games_idxs):
+    def decide_on_game(self, game_obj):
         game = ''
         possible_games = Rules.get_possible_games()
         if self.is_human:
             while game == '':
+                game_obj.log_msgs.append(str(self))
                 console_input = input("What game do you want to play?")
                 color = None
                 if console_input == 'solo':
@@ -33,12 +34,23 @@ class Player:
                     }
                 except:
                     print("Please pick a valid game.")
+            features = Utils.features_from_game(game_obj, self)
+            game_index = self.rl_agent.predict_game(features)
+            self.rl_agent.update_game_memory(self.position, features, game_index)
         else:
             if self.rl_agent:
                 features = Utils.features_from_game(game_obj, self)
-                game_index = self.rl_agent.predict_game(features, playable_games_idxs)
-                game_type = Rules.get_possible_games()[game_index]
-                color = 'h'
+                game_index = self.rl_agent.predict_game(features)
+                if game_index == 0:
+                    game_type = 'no_game'
+                    color = None
+                elif game_index == 1:
+                    game_type = 'wenz'
+                    color = None
+                else:
+                    # means its a solo, now determine color
+                    color = Rules.get_color_ordering()[game_index - 2]
+                    game_type = 'solo'
                 self.rl_agent.update_game_memory(self.position, features, game_index)
             else:
                 game_type = random.choice(Rules.get_possible_games())
@@ -64,16 +76,20 @@ class Player:
                     card_index = console_int_input
                 except:
                     print("Please pick a valid card.")
+            features = Utils.features_from_round(game_round, self)
+            if self.old_state:
+                self.rl_agent.update_card_memory_with_next_state(self.position, features, False)
+            self.old_state = features
+            self.rl_agent.update_card_memory(self.position, features, card_index)
         else:
             if self.rl_agent:
                 features = Utils.features_from_round(game_round, self)
-                game_number = Rules.get_possible_games().index(game_round.game.game_type['game'])
                 if self.old_state:
                     self.rl_agent.update_card_memory_with_next_state(self.position, features, False)
                 self.old_state = features
                 # every 10 rounds do not explore on cards but do on game
                 explore = game_round.game.game_no % 10 != 0
-                card_index = self.rl_agent.predict_action(features, playable_cards_indices, game_number, explore)
+                card_index = self.rl_agent.predict_action(features, playable_cards_indices, game_round.game.game_type["game"], explore)
                 self.rl_agent.update_card_memory(self.position, features, card_index)
             else:
                 # pick highest card and play it

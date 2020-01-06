@@ -162,7 +162,12 @@ class Rules:
                 card2_idx = card_ordering.index(cards[i+1].value)
                 color1 = color_ordering.index(cards[i].color)
                 color2 = color_ordering.index(cards[i+1].color)
-                if card1_idx > card2_idx or (card1_idx == card2_idx and color1 > color2):
+                card_is_higher = (
+                    (cards[i].is_trump == cards[i+1].is_trump and card1_idx == card2_idx and color1 > color2) or
+                    (cards[i].is_trump == cards[i+1].is_trump and card1_idx > card2_idx) or
+                    (cards[i].is_trump and not cards[i+1].is_trump)
+                )
+                if card_is_higher:
                     tmp = cards[i+1]
                     cards[i+1] = cards[i]
                     cards[i] = tmp

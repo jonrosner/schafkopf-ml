@@ -39,9 +39,11 @@ class Utils:
     @staticmethod
     def features_from_round(game_round, player):
         # 1-8 cards (-1 for None)
-        # 9-10 played cards (-1 for None)
+        # 9-10 played cards in this round (-1 for None)
         # 11 position
         # 12 - 35 played cards as one hot
+        # 36 1 if i am the one playing else 0
+        # 37 trump color if solo - not existant if wenz
         # here no game type is mentioned because currently every gametype has its own network
         features = [0] * 11
         cards = Rules.get_cards()
@@ -62,8 +64,7 @@ class Utils:
         for c in game_round.game.played_cards:
             played_cards[ids.index(c.id)] = 1
         features += played_cards
+        features.append(int(player.position == game_round.game.game_type["player_id"]))
+        if game_round.game.game_type["game"] == "solo":
+            features.append(Rules.get_color_ordering().index(game_round.game.game_type["color"]))
         return features
-
-    @staticmethod
-    def get_game_from_index(game_index):
-        return ("solo", "heart")

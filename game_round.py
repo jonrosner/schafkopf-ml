@@ -21,7 +21,7 @@ class Game_round:
             current_position = (self.starting_position + i) % self.game.match.num_players
             player = self.game.match.players[current_position]
             picked_card = player.decide_on_card(self)
-            print("Player {0} picked card {1}.".format(current_position, str(picked_card)))
+            self.game.log_msgs.append("Player {0} picked card {1}.".format(current_position, str(picked_card)))
             self.played_cards.append(picked_card)
             Rules.set_playable_cards(self, False)
 
@@ -29,11 +29,10 @@ class Game_round:
         self.winner = Rules.calc_round_winner(self)
         self.round_points = Rules.calc_round_points(self)
         self.game.match.players[self.winner].game_points += self.round_points
-        print("Player {0} won this round. Points: {1}. Played cards: {2}".format(self.winner, list(map(lambda player: player.game_points, self.game.match.players)), " ".join(list(map(str, self.played_cards)))))
+        self.game.log_msgs.append("Player {0} won this round. Points: {1}. Played cards: {2}".format(self.winner, list(map(lambda player: player.game_points, self.game.match.players)), " ".join(list(map(str, self.played_cards)))))
         self.game.starting_position = self.winner
         Rules.set_playable_cards(self, True)
-        game_number = Rules.get_possible_games().index(self.game.game_type['game'])
-        self.game.match.rl_agent.train_action_network(game_number)
+        self.game.match.rl_agent.train_action_network(self.game.game_type['game'])
         self.game.played_cards += self.played_cards
         if len(self.game.match.players[0].cards) == 0:
             self.game.playing = False

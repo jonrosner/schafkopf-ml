@@ -19,10 +19,11 @@ class Game:
         self.deck = Utils.create_new_deck()
         self.game_no = game_no
         self.played_cards = []
+        self.skip = False
+        self.log_msgs = []
 
     def start(self):
-        print("New game {0}. Starting position is {1}".format(self.game_no, self.starting_position))
-        playable_games_idxs = [0,1,2]
+        self.log_msgs.append("New game {0}. Starting position is {1}".format(self.game_no, self.starting_position))
         for i in range(self.match.num_players):
             if self.game_no % 30 == 0:
                 self.match.rl_agent.explore = False
@@ -33,23 +34,22 @@ class Game:
             player = self.match.players[current_position]
             cards_per_player = len(self.deck) // self.match.num_players
             player.cards = self.deck[i*cards_per_player:i*cards_per_player+cards_per_player]
-            game_type = player.decide_on_game(self, playable_games_idxs)
-            if game_type['game'] == 'wenz':
-                playable_games_idxs = [0,2]
-            if game_type['game'] == 'solo':
-                playable_games_idxs = [0]
-            print("Player {0} wants to play {1}".format(current_position, game_type))
+            game_type = player.decide_on_game(self)
+            self.log_msgs.append("Player {0} wants to play {1}".format(current_position, game_type))
             self.games_called.append(game_type)
         self.game_type = Rules.calc_highest_game(self.games_called)
-        print("We play:", self.game_type)
+        if self.game_type["game"] == "no_game":
+            self.skip = True
+        else:
+            self.log_msgs.append("We play: {0}".format(self.game_type))
         for player in self.match.players:
-            Rules.order_cards(player.cards, self)
             for card in player.cards:
                 card.is_trump = Rules.is_card_trump(card, self.game_type)
-            print("Player: {0}".format(str(player)))
+            Rules.order_cards(player.cards, self)
+            self.log_msgs.append("Player: {0}".format(str(player)))
 
     def run(self):
-        while self.playing:
+        while self.playing and not self.skip:
             game_round = Game_round(
                 self,
                 self.starting_position
@@ -60,12 +60,13 @@ class Game:
             self.game_rounds.append(game_round)
 
     def end(self):
+        if self.skip:
+            return
         self.winners = Rules.calc_game_winner(self)
         if len(self.winners) == 1 and self.match.rl_agent.explore == False:
-            print("WINNER WINNER")
+            self.log_msgs.append("WINNER WINNER")
         self.payout = Rules.calc_game_payout(self)
         #print("Points: ", list(map(lambda player: player.game_points, self.match.players)))
-        print("Player(s) {0} won this game.".format(list(map(lambda player: player.position, self.winners))))
         old_coins = list(map(lambda player: player.coins, self.match.players))
         for player in self.match.players:
             if player in self.winners:
@@ -76,6 +77,7 @@ class Game:
                 winning_player.coins += self.payout
         new_coins = list(map(lambda player: player.coins, self.match.players))
         rewards = [x[0] - x[1] for x in zip(new_coins, old_coins)]
+        self.log_msgs.append("Player(s) {0} won this game. Rewards: {1}".format(list(map(lambda player: player.position, self.winners)), rewards))
         for i, reward in enumerate(rewards):
             # Update game memory and card memory with reward - 8.0 is number of cards
             per_card_reward = reward / 8.0
@@ -83,11 +85,11 @@ class Game:
             self.match.rl_agent.update_card_memory_with_next_state(self.match.players[i].position, None, True)
             self.match.rl_agent.update_card_memory_with_reward(self.match.players[i].position, per_card_reward)
             self.match.players[i].old_state = None
-        game_number = Rules.get_possible_games().index(self.game_type['game'])
-        self.match.rl_agent.flush_card_memory(game_number)
+        self.match.rl_agent.flush_card_memory(self.game_type["game"])
         self.match.rl_agent.flush_game_memory()
         self.match.current_starting_position = \
             (self.match.current_starting_position + 1) % self.match.num_players
         self.match.rl_agent.train_game_network()
-        if self.game_no % 10000 == 0:
-            self.match.rl_agent.save_networks()
+        # only print logs if caller won the game
+        if len(self.winners) == 1:
+            print("\n".join(self.log_msgs))

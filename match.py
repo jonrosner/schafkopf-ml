@@ -8,7 +8,7 @@ class Match:
         self.current_starting_position = 0
         self.playing = True
         self.players = []
-        self.games = []
+        self.game = None
 
     def start(self):
         for i in range(self.num_players):
@@ -26,10 +26,12 @@ class Match:
                 starting_position=self.current_starting_position,
                 game_no=game_no
             )
+            self.game = game
             game.start()
             game.run()
             game.end()
-            self.games.append(game)
+            if game_no % 10000 == 0:
+                self.rl_agent.save_networks()
             game_no += 1
 
     def end(self):

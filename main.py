@@ -5,7 +5,7 @@ def init():
     num_players = 3
     rl_agent = Rl_Agent()
     match = Match(num_players, rl_agent)
-
+    rl_agent.set_match(match)
     match.start()
     match.run()
     match.end()

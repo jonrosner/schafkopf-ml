@@ -17,6 +17,11 @@ class DQN:
         self.learning_rate = 0.001
         self.model = self._build_model()
         self.debug_i = 1
+        # only a debug reference
+        self.match = None
+
+    def set_match(self, match):
+        self.match = match
 
     def _build_model(self):
         # Neural Net for Deep-Q learning Model
@@ -32,16 +37,15 @@ class DQN:
         self.model.save(filename)
 
     def remember(self, state, action, reward, state_2, done):
-        #print((state, action, reward, state_2, done))
         self.memory.append((state, action, reward, state_2, done))
 
     def predict(self, state, allowed_idxs, explore):
         if explore and np.random.rand() <= self.epsilon:
-            print("RANDOM")
+            self.match.game.log_msgs.append("RANDOM")
             return allowed_idxs[np.random.choice(len(allowed_idxs))]
         act_values = self.model.predict(np.array([state]))
         if not explore:
-            print(act_values)
+            self.match.game.log_msgs.append("{0}".format(act_values))
         return allowed_idxs[np.argmax(act_values[0][allowed_idxs])]
 
     def replay(self, batch_size):
