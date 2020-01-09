@@ -80,7 +80,8 @@ class Player:
             if self.old_state:
                 self.rl_agent.update_card_memory_with_next_state(self.position, features, False)
             self.old_state = features
-            self.rl_agent.update_card_memory(self.position, features, card_index)
+            playing = int(self.position == game_round.game.game_type["player_id"])
+            self.rl_agent.update_card_memory(self.position, features, card_index, playing)
         else:
             if self.rl_agent:
                 features = Utils.features_from_round(game_round, self)
@@ -89,8 +90,9 @@ class Player:
                 self.old_state = features
                 # every 10 rounds do not explore on cards but do on game
                 explore = game_round.game.game_no % 10 != 0
-                card_index = self.rl_agent.predict_action(features, playable_cards_indices, game_round.game.game_type["game"], explore)
-                self.rl_agent.update_card_memory(self.position, features, card_index)
+                playing = int(self.position == game_round.game.game_type["player_id"])
+                card_index = self.rl_agent.predict_action(features, playable_cards_indices, game_round.game.game_type["game"], explore, playing)
+                self.rl_agent.update_card_memory(self.position, features, card_index, playing)
             else:
                 # pick highest card and play it
                 highest_index = playable_cards_indices[0]

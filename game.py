@@ -1,6 +1,7 @@
 from game_round import Game_round
 from rules import Rules
 from utils import Utils
+import numpy as np
 
 import random
 
@@ -21,14 +22,15 @@ class Game:
         self.played_cards = []
         self.skip = False
         self.log_msgs = []
+        self.random_game = False
 
     def start(self):
         self.log_msgs.append("New game {0}. Starting position is {1}".format(self.game_no, self.starting_position))
+        if self.game_no % 30 == 0:
+            self.match.rl_agent.explore = False
+        else:
+            self.match.rl_agent.explore = True
         for i in range(self.match.num_players):
-            if self.game_no % 30 == 0:
-                self.match.rl_agent.explore = False
-            else:
-                self.match.rl_agent.explore = True
             self.match.players[i].game_points = 0
             current_position = (self.starting_position + i) % self.match.num_players
             player = self.match.players[current_position]
@@ -61,6 +63,12 @@ class Game:
 
     def end(self):
         if self.skip:
+            # 50 % of the time add 0 reward for no_game
+            if np.random.rand() < 0.5:
+                for player in self.match.players:
+                    self.match.rl_agent.update_game_memory_with_reward(player.position, 0)
+                self.match.rl_agent.flush_game_memory()
+                self.match.rl_agent.train_game_network()
             return
         self.winners = Rules.calc_game_winner(self)
         if len(self.winners) == 1 and self.match.rl_agent.explore == False:
@@ -90,6 +98,7 @@ class Game:
         self.match.current_starting_position = \
             (self.match.current_starting_position + 1) % self.match.num_players
         self.match.rl_agent.train_game_network()
+        self.match.rl_agent.train_action_network(self.game_type['game'])
         # only print logs if caller won the game
-        if len(self.winners) == 1:
+        if not self.random_game:
             print("\n".join(self.log_msgs))

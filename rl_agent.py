@@ -6,27 +6,38 @@ class Rl_Agent:
         self.game_network = DQN(9, 6)
         self.wenz_network = DQN(36, 8)
         self.solo_network = DQN(37, 8)
+        self.solo_playing_network = DQN(37, 8)
+        self.wenz_playing_network = DQN(36, 8)
         self.match = None
         self.game_memory = {}
         self.card_memory = {}
         self.explore = True
+        self.N = 100
 
     def set_match(self, match):
         self.match = match
         self.game_network.set_match(match)
         self.wenz_network.set_match(match)
         self.solo_network.set_match(match)
+        self.wenz_playing_network.set_match(match)
+        self.solo_playing_network.set_match(match)
 
     def predict_game(self, state):
         prediction = self.game_network.predict(state, [0,1,2,3,4,5], self.explore)
         return prediction
 
-    def predict_action(self, state, allowed_idxs, game_type, explore):
+    def predict_action(self, state, allowed_idxs, game_type, explore, playing):
         assert game_type in ['wenz', 'solo']
         if game_type == 'wenz':
-            prediction = self.wenz_network.predict(state, allowed_idxs, explore)
+            if playing:
+                prediction = self.wenz_playing_network.predict(state, allowed_idxs, explore)
+            else:
+                prediction = self.wenz_network.predict(state, allowed_idxs, explore)
         if game_type == 'solo':
-            prediction = self.solo_network.predict(state, allowed_idxs, explore)
+            if playing:
+                prediction = self.solo_playing_network.predict(state, allowed_idxs, explore)
+            else:
+                prediction = self.solo_network.predict(state, allowed_idxs, explore)
         return prediction
 
     def update_game_memory(self, player_pos, state, game):
@@ -48,16 +59,18 @@ class Rl_Agent:
             )
             self.game_memory[key] = {}
 
-    def update_card_memory(self, player_pos, state, action):
+    def update_card_memory(self, player_pos, state, action, playing):
         try:
             self.card_memory[player_pos].append({
             'state': state,
-            'action': action
+            'action': action,
+            'playing': playing
         })
         except:
             self.card_memory[player_pos] =[{
             'state': state,
-            'action': action
+            'action': action,
+            'playing': playing
         }]
 
     def update_card_memory_with_reward(self, player_pos, reward):
@@ -73,35 +86,33 @@ class Rl_Agent:
         for key in self.card_memory.keys():
                 for d in self.card_memory[key]:
                     if game_type == 'wenz':
-                        self.wenz_network.remember(
-                            d['state'],
-                            d['action'],
-                            d['reward'],
-                            d['state_2'],
-                            d['done']
-                        )
+                        if d["playing"]:
+                            self.wenz_playing_network.remember(d['state'],d['action'],d['reward'],d['state_2'],d['done'])
+                        else:
+                            self.wenz_network.remember(d['state'],d['action'],d['reward'],d['state_2'],d['done'])
                     else:
-                        self.solo_network.remember(
-                            d['state'],
-                            d['action'],
-                            d['reward'],
-                            d['state_2'],
-                            d['done']
-                        )
+                        if d["playing"]:
+                            self.solo_playing_network.remember(d['state'],d['action'],d['reward'],d['state_2'],d['done'])
+                        else:
+                            self.solo_network.remember(d['state'],d['action'],d['reward'],d['state_2'],d['done'])
                     self.card_memory[key] = []
 
     def train_game_network(self):
-        self.game_network.replay(32)
+        self.game_network.replay(64)
 
     def train_action_network(self, game_type):
         assert game_type in ['wenz', 'solo']
         if game_type == 'wenz':
-            self.wenz_network.replay(32)
+            self.wenz_playing_network.replay(64)
+            self.wenz_network.replay(64)
         else:
-            self.solo_network.replay(32)
+            self.solo_playing_network.replay(64)
+            self.solo_network.replay(64)
 
     def save_networks(self):
         print('SAVING NETWORK')
         self.game_network.save_checkpoint('game.h5df')
         self.wenz_network.save_checkpoint('wenz.h5df')
         self.solo_network.save_checkpoint('solo.h5df')
+        self.wenz_playing_network.save_checkpoint('wenz_playing.h5df')
+        self.solo_playing_network.save_checkpoint('solo_playing.h5df')

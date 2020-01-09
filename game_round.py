@@ -32,7 +32,6 @@ class Game_round:
         self.game.log_msgs.append("Player {0} won this round. Points: {1}. Played cards: {2}".format(self.winner, list(map(lambda player: player.game_points, self.game.match.players)), " ".join(list(map(str, self.played_cards)))))
         self.game.starting_position = self.winner
         Rules.set_playable_cards(self, True)
-        self.game.match.rl_agent.train_action_network(self.game.game_type['game'])
         self.game.played_cards += self.played_cards
         if len(self.game.match.players[0].cards) == 0:
             self.game.playing = False
